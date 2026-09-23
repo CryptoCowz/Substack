@@ -1,1 +1,74 @@
-
+{
+  "weekday_schedule": {
+    "monday": {
+      "lane": "mom_volatility",
+      "character": "Mom (Au)",
+      "image_file": "stills/mom_volatility.png",
+      "joke_caption": "Mom doesn't check the ticker. She checks the pasture.",
+      "hook_premise": "Most crypto charts look like a roller coaster designed by someone with a personal grudge.",
+      "lesson_topic": "Why volatile price swings cause panic and how stablecoins provide a calm dock.",
+      "glossary_term": "Stablecoin",
+      "glossary_definition": "A digital dollar (like USDC) designed to stay pegged to $1.00 so your balance remains steady while the market swings."
+    },
+    "tuesday": {
+      "lane": "dad_stablecoin",
+      "character": "Dad (Fe)",
+      "image_file": "stills/dad_security.png",
+      "joke_caption": "Dad changed the barn combination again.",
+      "hook_premise": "In crypto, there is no friendly branch manager named Bob to reset your forgotten password.",
+      "lesson_topic": "Why seed phrases must be guarded like physical cash and never saved in phone notes or screenshots.",
+      "glossary_term": "Seed Phrase",
+      "glossary_definition": "A master backup list of 12 to 24 words that unlocks your digital vault on any device. If you lose it, you lose access."
+    },
+    "wednesday": {
+      "lane": "blue_custody",
+      "character": "Blue Twin (Bi)",
+      "image_file": "stills/blue_custody.png",
+      "joke_caption": "Blue Twin brought a clipboard to inspect the pasture fence.",
+      "hook_premise": "Everyone hates the fence until wolves start circling the barnyard.",
+      "lesson_topic": "The difference between an exchange holding your funds as an IOU versus holding your own private keys.",
+      "glossary_term": "Self-Custody",
+      "glossary_definition": "Holding your own private keys directly so no bank, third-party exchange, or platform can freeze or misplace your assets."
+    },
+    "thursday": {
+      "lane": "son_acceptance",
+      "character": "Son (Ge)",
+      "image_file": "stills/son_acceptance.png",
+      "joke_caption": "Son is trying to buy a latte with cold storage.",
+      "hook_premise": "Digital wealth is exciting until the cashier asks why you are waving a flash drive at the card reader.",
+      "lesson_topic": "Why crypto needs to work at retail checkout counters and how digital settlement eliminates 3% card swipe fees.",
+      "glossary_term": "Merchant Settlement",
+      "glossary_definition": "The payment rail that lets a retailer accept digital dollars instantly for less than a penny in transaction fees."
+    }
+  },
+  "meet_the_herd_shorts": [
+    {
+      "character": "Mom (Au)",
+      "portrait": "stills/portraits/mom_au.png",
+      "personality_hook": "Unbothered by red candles, unimpressed by green spikes.",
+      "domain": "Managing volatility, stablecoins, and emotional discipline.",
+      "takeaway": "When markets get chaotic, she anchors the pasture in stable value."
+    },
+    {
+      "character": "Dad (Fe)",
+      "portrait": "stills/portraits/dad_fe.png",
+      "personality_hook": "Has never clicked an unverified email link in his life.",
+      "domain": "Hardware security, backups, and scam prevention.",
+      "takeaway": "If it isn't backed up in steel and kept off the cloud, it isn't safe."
+    },
+    {
+      "character": "Blue Twin (Bi)",
+      "portrait": "stills/portraits/blue_bi.png",
+      "personality_hook": "Actually reads the terms of service and compliance filings.",
+      "domain": "Custody laws, regulatory fences, and consumer protections.",
+      "takeaway": "Clear rules make the pasture safe for everyone to graze."
+    },
+    {
+      "character": "Son (Ge)",
+      "portrait": "stills/portraits/son_ge.png",
+      "personality_hook": "Convinced every store in town can run without swipe fees by next week.",
+      "domain": "Point-of-sale adoption, merchant rails, and real-world utility.",
+      "takeaway": "Crypto only wins when ordinary people can spend it on lunch."
+    }
+  ]
+}
