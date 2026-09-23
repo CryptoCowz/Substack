@@ -42,6 +42,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -104,7 +105,32 @@ jobs:
 
       - name: Commit and Push Output to Repository
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Use force add to ensure .gitignore
+          # Pull latest remote changes to avoid merge conflicts
+          git pull origin main --rebase || true
+          
+          # Force add output/substack to bypass any .gitignore rules
+          git add -f output/substack/
+          
+          if git diff --staged --quiet; then
+            echo "[*] No new changes detected to commit."
+          else
+            git commit -m "Auto-generate Substack pasture drafts [$(date +'%Y-%m-%d')]"
+            git push origin HEAD:main
+          fi
+
+      - name: Sync Output Directly to Google Drive
+        if: env.GDRIVE_CREDENTIALS != ''
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          echo "$GDRIVE_CREDENTIALS" > gdrive_credentials.json
+          if [ -f "scripts/sync_to_gdrive.py" ]; then
+            python scripts/sync_to_gdrive.py
+          elif [ -f "sync_to_gdrive.py" ]; then
+            python sync_to_gdrive.py
+          fi
+          rm -f gdrive_credentials.json
