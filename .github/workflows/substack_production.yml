@@ -1,1 +1,115 @@
+name: Substack Pasture Production Pipeline
 
+on:
+  schedule:
+    # Mon-Thu at 8:00 AM EDT (12:00 UTC) -> Weekday CLEAR Herd Notes
+    - cron: '0 12 * * 1-4'
+    # Friday at 1:00 PM EDT (17:00 UTC) -> Weekly "What the Herd Learned" Digest
+    - cron: '0 17 * * 5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Generation mode'
+        required: true
+        default: 'daily_note'
+        type: choice
+        options:
+          - 'daily_note'
+          - 'character_short'
+          - 'weekly_digest'
+          - 'all'
+      character_lane:
+        description: 'Specific character lane (if applicable)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - 'auto'
+          - 'mom_volatility'
+          - 'dad_stablecoin'
+          - 'blue_custody'
+          - 'son_acceptance'
+
+jobs:
+  build-and-generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests google-genai pydantic
+
+      - name: Ensure Directories Exist
+        run: |
+          mkdir -p stills/portraits output/substack config
+
+      - name: Run Content Generation Engine
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODE: ${{ github.event.inputs.mode || 'auto' }}
+          LANE: ${{ github.event.inputs.character_lane || 'auto' }}
+        run: |
+          python scripts/generate_pasture_content.py --mode "$MODE" --lane "$LANE"
+
+      - name: Validate Output Quality & Constraints
+        run: |
+          # Quality gate: ensures 150-250 words and required CTA
+          python -c '
+          import os, sys, glob
+          files = glob.glob("output/substack/*.md")
+          if not files:
+              print("[!] Warning: No markdown output generated.")
+              sys.exit(0)
+          for f in files:
+              with open(f) as fp:
+                  text = fp.read()
+              words = len(text.split())
+              if "Herd up free." not in text:
+                  print(f"[!] Error: Missing CTA in {f}")
+                  sys.exit(1)
+              print(f"[*] Validated {f}: {words} words.")
+          '
+
+      - name: Upload Artifacts Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: substack-pasture-posts-${{ github.run_number }}
+          path: output/substack/
+          if-no-files-found: warn
+
+      - name: Commit and Push Output to Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/substack/
+          if git diff --staged --quiet; then
+            echo "[*] No new drafts to commit."
+          else
+            git commit -m "Auto-generate Substack pasture drafts [$(date +'%Y-%m-%d')]"
+            git push origin HEAD:main
+          fi
+
+      - name: Sync Directly to Google Drive (Optional)
+        if: env.GDRIVE_CREDENTIALS != ''
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          echo "$GDRIVE_CREDENTIALS" > gdrive_credentials.json
+          if [ -f "scripts/sync_to_gdrive.py" ]; then
+            python scripts/sync_to_gdrive.py --source output/substack
+          fi
+          rm -f gdrive_credentials.json
