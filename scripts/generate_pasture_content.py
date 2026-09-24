@@ -225,13 +225,16 @@ def generate_weekly_bundle(char_key):
     out_dir = "output/substack"
     os.makedirs(out_dir, exist_ok=True)
 
-    # 1. Daily In-Depth Note
+    # 1. DAILY IN-DEPTH NOTE
     daily_md_sections = []
     daily_html_sections = []
     for heading, text in c["daily_sections"]:
         daily_md_sections.append(f"## {heading}\n\n{text}")
         paras_html = "".join([f"<p>{p.strip()}</p>" for p in text.split("\n\n") if p.strip()])
         daily_html_sections.append(f"<h3>{heading}</h3>{paras_html}")
+
+    # Separated from f-string to prevent backslash syntax errors in Python 3.11
+    daily_sections_text = "\n\n---\n\n".join(daily_md_sections)
 
     daily_md = f"""# {c['daily_title']}
 
@@ -245,7 +248,7 @@ def generate_weekly_bundle(char_key):
 
 ---
 
-{"\n\n---\n\n".join(daily_md_sections)}
+{daily_sections_text}
 
 ---
 
@@ -275,7 +278,7 @@ def generate_weekly_bundle(char_key):
     """
     daily_html = render_html_preview(c['daily_title'], c['daily_subtitle'], c['panel_img'], c['panel_caption'], daily_html_body)
 
-    # 2. Meet-the-Herd Short
+    # 2. CHARACTER SHORT (Meet the Herd Drop)
     short_title = f"Meet the Herd: {c['name']} on {c['domain']}"
     short_subtitle = f"One character, one lane, and zero lore dumps."
     short_md = f"""# {short_title}
@@ -312,7 +315,7 @@ def generate_weekly_bundle(char_key):
     """
     short_html = render_html_preview(short_title, short_subtitle, c['portrait_img'], c['portrait_caption'], short_html_body)
 
-    # 3. Weekly Digest
+    # 3. WEEKLY DIGEST ("What the Herd Learned")
     digest_title = f"What the Herd Learned This Week: The {c['name']} Report"
     digest_subtitle = f"Three key takeaways from {c['name']} on {c['domain']}, plus what’s grazing next."
     takeaways_md = "\n\n".join([f"• {t}" for t in c["digest_takeaways"]])
@@ -355,7 +358,7 @@ def generate_weekly_bundle(char_key):
     """
     digest_html = render_html_preview(digest_title, digest_subtitle, c['panel_img'], c['panel_caption'], digest_html_body)
 
-    # Save to output/substack
+    # Save all 6 files to output/substack
     files_to_write = [
         (f"{date_str}_{c['id']}_daily_note.md", daily_md),
         (f"{date_str}_{c['id']}_daily_note.html", daily_html),
