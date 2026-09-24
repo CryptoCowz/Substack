@@ -1,37 +1,26 @@
-name: Substack Pasture Production Pipeline
+name: Substack Sunday Production Pipeline
 
 on:
   schedule:
-    # Mon-Thu at 8:00 AM EDT (12:00 UTC) -> Weekday CLEAR Herd Notes
-    - cron: '0 12 * * 1-4'
-    # Friday at 1:00 PM EDT (17:00 UTC) -> Weekly "What the Herd Learned" Digest
-    - cron: '0 17 * * 5'
+    # Runs every Sunday at 9:00 AM EDT (13:00 UTC)
+    - cron: '0 13 * * 0'
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Generation Mode'
+      character:
+        description: 'Select Character (or Auto Rotate)'
         required: true
-        default: 'daily_note'
-        type: choice
-        options:
-          - 'daily_note'
-          - 'character_short'
-          - 'weekly_digest'
-          - 'all'
-      character_lane:
-        description: 'Target Character Lane'
-        required: false
         default: 'auto'
         type: choice
         options:
           - 'auto'
-          - 'mom_volatility'
-          - 'dad_stablecoin'
-          - 'blue_custody'
-          - 'son_acceptance'
+          - 'mom'
+          - 'dad'
+          - 'son'
+          - 'red_twin'
+          - 'blue_twin'
 
 jobs:
-  build-generate-and-publish:
+  sunday-production:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,58 +38,42 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Diagnostic - Inspect Workspace Before Run
-        run: |
-          echo "=== 1. Root Directory Listing ==="
-          ls -la
-          echo "=================================="
-
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            pip install requests google-genai google-api-python-client google-auth-httplib2 google-auth-oauthlib
+            pip install requests google-api-python-client google-auth-httplib2 google-auth-oauthlib
           fi
 
       - name: Ensure Directories Exist
         run: |
           mkdir -p output/substack stills/portraits config scripts
 
-      - name: Execute Pasture Content Generator
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          MODE: ${{ github.event.inputs.mode || 'auto' }}
-          LANE: ${{ github.event.inputs.character_lane || 'auto' }}
+      - name: Execute Sunday Content Generator
         run: |
+          CHARACTER_ARG="${{ github.event.inputs.character || 'auto' }}"
           echo "=== 2. Running Content Generation Engine ==="
           if [ -f "scripts/generate_pasture_content.py" ]; then
-            python scripts/generate_pasture_content.py --mode "$MODE" --lane "$LANE"
+            python scripts/generate_pasture_content.py --character "$CHARACTER_ARG"
           elif [ -f "generate_pasture_content.py" ]; then
-            python generate_pasture_content.py --mode "$MODE" --lane "$LANE"
+            python generate_pasture_content.py --character "$CHARACTER_ARG"
           else
-            echo "[!] Error: generate_pasture_content.py not found in root or scripts/."
+            echo "[!] Error: generate_pasture_content.py not found."
             exit 1
           fi
 
-      - name: Diagnostic - Inspect Output Directory
+      - name: Inspect Output Bundle
         run: |
-          echo "=== 3. Inspecting Output Directory ==="
-          if [ -d "output/substack" ]; then
-            ls -la output/substack/
-          else
-            echo "[!] Warning: output/substack directory was not created."
-          fi
-          echo "=== 4. Git Status ==="
-          git status
-          echo "======================"
+          echo "=== Generated Files in output/substack/ ==="
+          ls -la output/substack/
 
-      - name: Upload Artifacts Bundle
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: substack-drafts-${{ github.run_number }}
-          path: output/
+          name: sunday-pasture-bundle-${{ github.run_number }}
+          path: output/substack/
           if-no-files-found: warn
 
       - name: Commit and Push Output to Repository
@@ -108,20 +81,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Pull latest remote changes to avoid merge conflicts
           git pull origin main --rebase || true
-          
-          # Force add output/substack to bypass any .gitignore rules
           git add -f output/substack/
           
           if git diff --staged --quiet; then
-            echo "[*] No new changes detected to commit."
+            echo "[*] No new changes to commit."
           else
-            git commit -m "Auto-generate Substack pasture drafts [$(date +'%Y-%m-%d')]"
+            git commit -m "Auto-generate Sunday Pasture bundle [$(date +'%Y-%m-%d')]"
             git push origin HEAD:main
           fi
 
-      - name: Sync Output Directly to Google Drive
+      - name: Sync Output to Google Drive (Optional)
         if: env.GDRIVE_CREDENTIALS != ''
         env:
           GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
@@ -130,7 +100,5 @@ jobs:
           echo "$GDRIVE_CREDENTIALS" > gdrive_credentials.json
           if [ -f "scripts/sync_to_gdrive.py" ]; then
             python scripts/sync_to_gdrive.py
-          elif [ -f "sync_to_gdrive.py" ]; then
-            python sync_to_gdrive.py
           fi
           rm -f gdrive_credentials.json
