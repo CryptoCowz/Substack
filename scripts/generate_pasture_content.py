@@ -233,7 +233,6 @@ def generate_weekly_bundle(char_key):
         paras_html = "".join([f"<p>{p.strip()}</p>" for p in text.split("\n\n") if p.strip()])
         daily_html_sections.append(f"<h3>{heading}</h3>{paras_html}")
 
-    # Separated from f-string to prevent backslash syntax errors in Python 3.11
     daily_sections_text = "\n\n---\n\n".join(daily_md_sections)
 
     daily_md = f"""# {c['daily_title']}
@@ -384,7 +383,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.character == "auto":
-        week_num = datetime.now().isocalendar()
+        # .week extracts the integer week number
+        week_num = datetime.now().isocalendar().week
         char_key = ROTATION[week_num % len(ROTATION)]
         print(f"[*] Auto-selected character based on Calendar Week {week_num}: {char_key.upper()}")
     else:
